@@ -33,7 +33,7 @@ encryption:
     rounds: ${ENCRYPTION_SALT_ROUNDS:10}
 
 email:
-  from: ${EMAIL_FROM:no-reply@njt.local}
+  from: ${EMAIL_FROM:no-reply@webapi.local}
 
 app:
   frontend:

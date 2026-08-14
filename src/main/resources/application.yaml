@@ -2,7 +2,7 @@
 
 spring:
   application:
-    name: Classroom reservation application
+    name: WebApi
 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE}
