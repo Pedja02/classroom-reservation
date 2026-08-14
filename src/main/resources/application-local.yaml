@@ -20,7 +20,7 @@ spring:
 
 server:
   error:
-    include-message: ${SERVER_ERROR_INCLUDE_MESSAGE:always}
+    include-message: always
 
 jwt:
   algorithm:
@@ -48,15 +48,6 @@ app:
       - /api/v1/auth/verify
       - /actuator/**
       - /ws/**
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: ${ACTUATOR_ENDPOINTS:health,info,metrics,env,configprops}
-  endpoint:
-    health:
-      show-details: ${ACTUATOR_HEALTH_DETAILS:always}
 
 logging:
   level:

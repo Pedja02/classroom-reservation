@@ -1,10 +1,10 @@
 services:
-  classroom-reservation-api:
-    container_name: classroom-reservation-api
+  webapi:
+    container_name: webapi
     build: .
     restart: unless-stopped
     depends_on:
-      - classroom-reservation-db
+      - webapi-db
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       DB_URL: ${DB_URL}
@@ -15,12 +15,16 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
-      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS}
+      JWT_ALGORITHM_KEY: ${JWT_ALGORITHM_KEY}
+      JWT_ISSUER: ${JWT_ISSUER}
+      EMAIL_FROM: ${EMAIL_FROM}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
     ports:
       - "8080:8080"
 
-  classroom-reservation-db:
-    container_name: classroom-reservation-db
+  webapi-db:
+    container_name: webapi-db
     image: postgres:16
     restart: unless-stopped
     environment:
@@ -30,7 +34,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - classroom_reservation_db_data:/var/lib/postgresql/data
+      - webapi_db_data:/var/lib/postgresql/data
 
 volumes:
-  classroom_reservation_db_data:
+  webapi_db_data:

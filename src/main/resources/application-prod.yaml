@@ -5,11 +5,6 @@ spring:
     activate:
       on-profile: prod
 
-  datasource:
-    hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
-      minimum-idle: ${DB_POOL_MIN_IDLE:5}
-
   mail:
     properties:
       mail:
@@ -18,16 +13,16 @@ spring:
             required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
 
 server:
-  # Required when running behind nginx / a load balancer.
+  # Required when running behind nginx
   forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:framework}
   tomcat:
-    max-threads: ${SERVER_MAX_THREADS:200}
+    max-threads: 200
     accesslog:
-      enabled: ${SERVER_ACCESSLOG_ENABLED:false}
+      enabled: false
 
 jwt:
-  issuer: ${JWT_ISSUER:WebApi}
-  expireInSeconds: ${JWT_EXPIRE_IN_SECONDS:86400} # 1 day
+  issuer: ${JWT_ISSUER}
+  expireInSeconds: 86400 # 1 day
 
 app:
   cors:
@@ -45,7 +40,6 @@ logging:
     root: WARN
     com.NJT.WebApi: INFO
     org.hibernate.SQL: WARN
-    # Quoted: bare OFF is a YAML boolean and would fail to bind as a log level.
     org.hibernate.orm.jdbc.bind: "OFF"   # never log query parameters in production
     org.springframework.web.socket: WARN
   file:
