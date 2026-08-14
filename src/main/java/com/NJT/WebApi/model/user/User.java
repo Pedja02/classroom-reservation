@@ -16,7 +16,8 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "user")
+// "user" is a reserved word in PostgreSQL, so the table must not be named that.
+@Table(name = "users")
 @Inheritance
 @DiscriminatorColumn(name="user_type")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
