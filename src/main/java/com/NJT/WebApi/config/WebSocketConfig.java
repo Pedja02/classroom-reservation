@@ -35,6 +35,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private Map<String, SessionInfo> activeSessions = new HashMap<>();
 
+    private final AppProperties appProperties;
+
+    public WebSocketConfig(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
@@ -43,7 +49,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("http://localhost:4200")
+        registry.addEndpoint("/ws").setAllowedOriginPatterns(appProperties.getCors().originsArray())
                 .setHandshakeHandler(new CustomHandshakeHandler())
                 .withSockJS();
     }

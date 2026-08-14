@@ -1,0 +1,83 @@
+# Base configuration - shared by every profile
+
+
+spring:
+  application:
+    name: Classroom reservation application
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+
+  # PostgreSQL
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: HikariPool
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:30000}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:600000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:1800000}
+
+  jpa:
+    open-in-view: false
+    show-sql: ${JPA_SHOW_SQL:false}
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: ${JPA_FORMAT_SQL:false}
+        jdbc:
+          time_zone: ${JPA_TIME_ZONE:Europe/Belgrade}
+
+  # SMTP
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS}
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: ${SERVER_ERROR_INCLUDE_MESSAGE:never}
+    include-stacktrace: never
+    include-binding-errors: never
+
+# JWTService
+jwt:
+  algorithm:
+    key: ${JWT_ALGORITHM_KEY}
+
+# EncryptionService (BCrypt)
+encryption:
+  salt:
+    rounds: ${ENCRYPTION_SALT_ROUNDS:12}
+
+email:
+  from: ${EMAIL_FROM}
+
+app:
+  frontend:
+    url: ${APP_FRONTEND_URL}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${ACTUATOR_ENDPOINTS:health}
+  endpoint:
+    health:
+      show-details: ${ACTUATOR_HEALTH_DETAILS:never}
+
+mail:
+  queue:
+    fixed-rate: ${MAIL_QUEUE_FIXED_RATE_MS:20000}
