@@ -1,0 +1,153 @@
+name: Deploy - PROD Server
+
+on:
+  pull_request:
+    branches: [production]
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Type "deploy-prod" to confirm production deployment'
+        required: true
+        type: string
+      backup_database:
+        description: 'Backup database before deployment?'
+        required: true
+        type: boolean
+        default: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.merged == true
+    steps:
+      - name: Check confirmation
+        if: >
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.confirm_deploy != 'deploy-prod'
+        run: |
+          echo "Not confirmed. Type 'deploy-prod' to proceed."
+          exit 1
+
+  build_and_push:
+    name: Build and Push Image
+    runs-on: ubuntu-latest
+    environment: production
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B clean package -DskipTests
+
+      - name: Compute tag
+        id: tag
+        run: echo "value=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  deploy:
+    name: Deploy on PROD (blue-green)
+    runs-on: ubuntu-latest
+    environment: production
+    needs: build_and_push
+    env:
+      TARGET: ${{ vars.PROD_SERVER_USER }}@${{ vars.PROD_SERVER_IP }}
+      CFG: /apps/classroom-reservation/web-api/config
+      SCRIPTS: /apps/classroom-reservation/web-api/scripts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ vars.PROD_SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Ship deploy scripts
+        run: |
+          scp -i ~/.ssh/id_ed25519 deploy/*.sh "$TARGET:$SCRIPTS/"
+          ssh -i ~/.ssh/id_ed25519 "$TARGET" "chmod +x $SCRIPTS/*.sh"
+
+      - name: Push app env
+        run: |
+          {
+            echo "SPRING_PROFILES_ACTIVE=${{ vars.SPRING_PROFILES_ACTIVE }}"
+            echo "DB_URL=${{ vars.DB_URL }}"
+            echo "DB_USERNAME=${{ vars.DB_USERNAME }}"
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+            echo "MAIL_HOST=${{ vars.MAIL_HOST }}"
+            echo "MAIL_PORT=${{ vars.MAIL_PORT }}"
+            echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}"
+            echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}"
+            echo "MAIL_SMTP_AUTH=${{ vars.MAIL_SMTP_AUTH }}"
+            echo "JWT_ALGORITHM_KEY=${{ secrets.JWT_ALGORITHM_KEY }}"
+            echo "JWT_ISSUER=${{ vars.JWT_ISSUER }}"
+            echo "EMAIL_FROM=${{ vars.EMAIL_FROM }}"
+            echo "APP_FRONTEND_URL=${{ vars.APP_FRONTEND_URL }}"
+            echo "APP_CORS_ALLOWED_ORIGINS=${{ vars.APP_CORS_ALLOWED_ORIGINS }}"
+          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" "install -m600 /dev/stdin $CFG/app.env"
+
+      - name: Push db env
+        run: |
+          {
+            echo "POSTGRES_USER=${{ vars.DB_USERNAME }}"
+            echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}"
+            echo "POSTGRES_DB=${{ vars.POSTGRES_DB }}"
+          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" "install -m600 /dev/stdin $CFG/db.env"
+
+      - name: Push backup env
+        run: |
+          {
+            echo "S3_BUCKET=${{ vars.S3_BUCKET }}"
+            echo "S3_ENDPOINT=${{ vars.S3_ENDPOINT }}"
+            echo "S3_REGION=${{ vars.S3_REGION }}"
+            echo "S3_ACCESS_KEY=${{ secrets.HETZNER_STORAGE_ACCESS_KEY }}"
+            echo "S3_SECRET_KEY=${{ secrets.HETZNER_STORAGE_SECRET_KEY }}"
+          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" "install -m600 /dev/stdin $CFG/backup.env"
+
+      - name: Backup database
+        if: >
+          github.event_name == 'pull_request' ||
+          github.event.inputs.backup_database == 'true'
+        run: ssh -i ~/.ssh/id_ed25519 "$TARGET" "$SCRIPTS/backup-db.sh"
+
+      - name: Deploy to idle colour and switch
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "$TARGET" \
+            "$SCRIPTS/deploy.sh ${{ needs.build_and_push.outputs.tag }}"
+
+      - name: Status
+        if: always()
+        run: ssh -i ~/.ssh/id_ed25519 "$TARGET" "$SCRIPTS/status.sh" || true

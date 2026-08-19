@@ -1,0 +1,46 @@
+# PRODUCTION profile - only what production changes relative to application.yaml.
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  mail:
+    properties:
+      mail:
+        smtp:
+          starttls:
+            required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
+
+server:
+  # Required when running behind nginx
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:framework}
+  tomcat:
+    max-threads: 200
+    accesslog:
+      enabled: false
+
+jwt:
+  issuer: ${JWT_ISSUER}
+  expireInSeconds: 86400 # 1 day
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS} # Comma-separated list of origins
+  security:
+    public-endpoints: # Reachable without a JWT
+      - /api/v1/auth/login
+      - /api/v1/auth/register
+      - /api/v1/auth/verify
+      - /actuator/health
+      - /ws/**
+
+logging:
+  level:
+    root: WARN
+    com.NJT.WebApi: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: "OFF"   # never log query parameters in production
+    org.springframework.web.socket: WARN
+  file:
+    name: /var/log/webapi/application.log

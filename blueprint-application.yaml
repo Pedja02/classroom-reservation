@@ -1,0 +1,63 @@
+# Structural skeleton of a profile configuration file. NOT loaded by
+# Spring Boot - copy it when creating a new application-<profile>.yaml
+# and fill in the values.
+
+spring:
+  config:
+    activate:
+      on-profile:
+
+  datasource:
+    hikari:
+      maximum-pool-size:
+      minimum-idle:
+
+  jpa:
+    show-sql:
+    hibernate:
+      ddl-auto:
+    properties:
+      hibernate:
+        format_sql:
+
+server:
+  error:
+    include-message:
+
+jwt:
+  algorithm:
+    key:
+  issuer:
+  expireInSeconds:
+
+encryption:
+  salt:
+    rounds:
+
+email:
+  from:
+
+app:
+  frontend:
+    url:
+  cors:
+    allowed-origins:
+  security:
+    public-endpoints:
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+  endpoint:
+    health:
+      show-details:
+
+logging:
+  level:
+    root:
+    com.NJT.WebApi:
+    org.hibernate.SQL:
+    org.hibernate.orm.jdbc.bind:
+    org.springframework.web.socket:

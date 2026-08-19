@@ -1,0 +1,40 @@
+services:
+  webapi:
+    container_name: webapi
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - webapi-db
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      JWT_ALGORITHM_KEY: ${JWT_ALGORITHM_KEY}
+      JWT_ISSUER: ${JWT_ISSUER}
+      EMAIL_FROM: ${EMAIL_FROM}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
+    ports:
+      - "8080:8080"
+
+  webapi-db:
+    container_name: webapi-db
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - webapi_db_data:/var/lib/postgresql/data
+
+volumes:
+  webapi_db_data:

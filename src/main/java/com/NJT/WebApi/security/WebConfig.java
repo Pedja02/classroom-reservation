@@ -4,6 +4,8 @@
  */
 package com.NJT.WebApi.security;
 
+import com.NJT.WebApi.config.AppProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -17,10 +19,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
 
+    private final AppProperties appProperties;
+
+    @Autowired
+    public WebConfig(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("http://localhost:4200")
+                .allowedOriginPatterns(appProperties.getCors().originsArray())
                 .allowedMethods("*")
                 .allowCredentials(true).maxAge(3600)
                 .allowedHeaders("*");
