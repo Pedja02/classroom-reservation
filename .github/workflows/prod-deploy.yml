@@ -34,6 +34,13 @@ jobs:
         run: |
           echo "Not confirmed. Type 'deploy-prod' to proceed."
           exit 1
+      - name: Check branch
+        if: >
+          github.event_name == 'workflow_dispatch' &&
+          github.ref != 'refs/heads/production'
+        run: |
+          echo "Manual deploys must be run from the production branch (got ${GITHUB_REF})." >&2
+          exit 1
 
   build_and_push:
     name: Build and Push Image
@@ -56,7 +63,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -B clean package -DskipTests
+        run: mvn -B clean package
 
       - name: Compute tag and lowercase image name
         id: meta
@@ -152,7 +159,7 @@ jobs:
           github.event.inputs.backup_database == 'true'
         run: ssh -i ~/.ssh/id_ed25519 "$TARGET" "$SCRIPTS/backup-db.sh"
 
-      - name: Deploy to idle colour and switch
+      - name: Deploy
         run: |
           ssh -i ~/.ssh/id_ed25519 "$TARGET" \
             "$SCRIPTS/deploy.sh ${{ needs.build_and_push.outputs.tag }}"
