@@ -18,7 +18,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   validate:
@@ -45,7 +44,8 @@ jobs:
       contents: read
       packages: write
     outputs:
-      tag: ${{ steps.tag.outputs.value }}
+      tag: ${{ steps.meta.outputs.value }}
+      image: ${{ steps.meta.outputs.image }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,9 +58,11 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package -DskipTests
 
-      - name: Compute tag
-        id: tag
-        run: echo "value=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+      - name: Compute tag and lowercase image name
+        id: meta
+        run: |
+          echo "value=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "image=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/login-action@v3
         with:
@@ -73,8 +75,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.value }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.image }}:latest
 
   deploy:
     name: Deploy on PROD (blue-green)
@@ -93,7 +95,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ vars.PROD_SERVER_IP }} >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+          EOF
 
       - name: Ship deploy scripts
         run: |
@@ -117,7 +123,8 @@ jobs:
             echo "EMAIL_FROM=${{ vars.EMAIL_FROM }}"
             echo "APP_FRONTEND_URL=${{ vars.APP_FRONTEND_URL }}"
             echo "APP_CORS_ALLOWED_ORIGINS=${{ vars.APP_CORS_ALLOWED_ORIGINS }}"
-          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" "install -m600 /dev/stdin $CFG/app.env"
+          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" \
+              "cat > /apps/classroom-reservation/web-api/config/app.env && chmod 600 /apps/classroom-reservation/web-api/config/app.env"
 
       - name: Push db env
         run: |
@@ -125,7 +132,8 @@ jobs:
             echo "POSTGRES_USER=${{ vars.DB_USERNAME }}"
             echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}"
             echo "POSTGRES_DB=${{ vars.POSTGRES_DB }}"
-          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" "install -m600 /dev/stdin $CFG/db.env"
+          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" \
+              "cat > /apps/classroom-reservation/web-api/config/db.env && chmod 600 /apps/classroom-reservation/web-api/config/db.env"
 
       - name: Push backup env
         run: |
@@ -135,7 +143,8 @@ jobs:
             echo "S3_REGION=${{ vars.S3_REGION }}"
             echo "S3_ACCESS_KEY=${{ secrets.HETZNER_STORAGE_ACCESS_KEY }}"
             echo "S3_SECRET_KEY=${{ secrets.HETZNER_STORAGE_SECRET_KEY }}"
-          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" "install -m600 /dev/stdin $CFG/backup.env"
+          } | ssh -i ~/.ssh/id_ed25519 "$TARGET" \
+              "cat > /apps/classroom-reservation/web-api/config/backup.env && chmod 600 /apps/classroom-reservation/web-api/config/backup.env"
 
       - name: Backup database
         if: >
