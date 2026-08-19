@@ -50,5 +50,15 @@ nginx_point_to "$target"
 [[ -f "$STATE/current.tag" ]] && cp "$STATE/current.tag" "$STATE/previous.tag"
 echo "$target" > "$STATE/active.color"
 echo "$tag"    > "$STATE/current.tag"
+
+# --- drain and tear down the old colour ---
+if [[ -n "$active" ]]; then
+  echo "==> draining webapi-$active for 15s"
+  sleep 15
+  echo "==> stopping webapi-$active"
+  old_tag=$(cat "$STATE/previous.tag" 2>/dev/null || echo latest)
+  compose_app "$active" "$old_tag" down || true
+fi
+
 docker image prune -f > /dev/null
 echo "==> deployed $tag on $target (:$port); previous=${active:-none}"
