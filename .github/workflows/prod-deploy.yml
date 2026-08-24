@@ -116,7 +116,7 @@ jobs:
       - name: Push app env
         run: |
           {
-            echo "SPRING_PROFILES_ACTIVE=${{ vars.SPRING_PROFILES_ACTIVE }}"
+            echo "SPRING_PROFILES_ACTIVE=${{ vars.SPRING_PROFILES_ACTIVE }}" 
             echo "DB_URL=${{ vars.DB_URL }}"
             echo "DB_USERNAME=${{ vars.DB_USERNAME }}"
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
