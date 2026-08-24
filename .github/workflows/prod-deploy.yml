@@ -110,7 +110,7 @@ jobs:
 
       - name: Ship deploy scripts
         run: |
-          scp -i ~/.ssh/id_ed25519 deploy/*.sh "$TARGET:$SCRIPTS/"
+          scp -i ~/.ssh/id_ed25519 deploy-scripts/*.sh "$TARGET:$SCRIPTS/"
           ssh -i ~/.ssh/id_ed25519 "$TARGET" "chmod +x $SCRIPTS/*.sh"
 
       - name: Push app env
