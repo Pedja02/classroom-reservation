@@ -31,7 +31,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests((authorize) -> authorize
                 .requestMatchers(
                         "/api/v1/auth/login",
-                        "/v1/auth/login"
+                        "/v1/auth/login",
+                        "/actuator/health"
                 ).permitAll()
                 .anyRequest().authenticated());
         http.addFilterBefore(jwtRequestFilter, AuthorizationFilter.class);
