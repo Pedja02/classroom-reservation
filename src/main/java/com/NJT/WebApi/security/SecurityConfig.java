@@ -29,11 +29,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http.authorizeHttpRequests((authorize) -> authorize
-                .requestMatchers(
-                        "/api/v1/auth/login",
-                        "/v1/auth/login",
-                        "/actuator/health"
-                ).permitAll()
+                .requestMatchers(appProperties.getSecurity().publicEndpointsArray()).permitAll()
                 .anyRequest().authenticated());
         http.addFilterBefore(jwtRequestFilter, AuthorizationFilter.class);
         http.csrf(AbstractHttpConfigurer::disable);
