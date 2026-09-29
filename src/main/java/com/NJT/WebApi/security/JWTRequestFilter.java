@@ -3,8 +3,7 @@ package com.NJT.WebApi.security;
 import com.NJT.WebApi.model.user.User;
 import com.NJT.WebApi.repository.UserRepository;
 import com.NJT.WebApi.service.JWTService;
-import com.NJT.WebApi.service.UserService;
-import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,15 +28,12 @@ public class JWTRequestFilter extends OncePerRequestFilter {
 
     private JWTService jwtService;
     private UserRepository userRepository;
-    private UserService userService;
 
     @Autowired
     public JWTRequestFilter(JWTService jwtService,
-                            UserRepository userRepository,
-                            UserService userService) {
+                            UserRepository userRepository) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
-        this.userService = userService;
     }
 
     @Override
@@ -63,8 +59,8 @@ public class JWTRequestFilter extends OncePerRequestFilter {
                     //System.out.println(SecurityContextHolder.getContext().getAuthentication().getPrincipal().getClass().getName()+"");
 
                 }
-            }catch (JWTDecodeException ex){
-                ex.printStackTrace();
+            }catch (JWTVerificationException ex){
+                SecurityContextHolder.clearContext();
             }
         }
         filterChain.doFilter(request, response);

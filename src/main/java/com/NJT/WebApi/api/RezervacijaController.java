@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,6 +50,7 @@ public class RezervacijaController {
     }
 
     @GetMapping("/naCekanju")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<Rezervacija>> getAllReservationRequests() {
         List<Rezervacija> lista = rezervacijaService.getAllByStatusRezervacije("Na cekanju");
 
@@ -65,11 +67,13 @@ public class RezervacijaController {
     }
 
     @PostMapping("/prihvati")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity acceptReservationRequest(@RequestBody Rezervacija rezervacija) {
         return rezervacijaService.acceptRequest(rezervacija);
     }
 
     @PostMapping("/odbij")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity denyReservationRequest(@RequestBody Rezervacija rezervacija) {
         return rezervacijaService.denyRequest(rezervacija);
     }

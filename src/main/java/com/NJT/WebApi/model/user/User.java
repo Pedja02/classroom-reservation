@@ -2,6 +2,7 @@ package com.NJT.WebApi.model.user;
 
 import com.NJT.WebApi.model.VerificationToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.persistence.*;
@@ -42,6 +43,7 @@ public class User implements Serializable {
     private String imePrezime;
 
     @Column(name = "password", nullable = true)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Column(name = "odobren", nullable = false)

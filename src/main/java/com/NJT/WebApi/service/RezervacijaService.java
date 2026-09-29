@@ -5,6 +5,7 @@
 package com.NJT.WebApi.service;
 
 import com.NJT.WebApi.model.Rezervacija;
+import com.NJT.WebApi.model.user.User;
 import com.NJT.WebApi.model.exception.EmailFailureException;
 import com.NJT.WebApi.repository.RezervacijaRepository;
 import com.NJT.WebApi.repository.StatusRezervacijeRepository;
@@ -16,12 +17,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import org.springframework.http.ResponseEntity;
 
 
 /**
@@ -76,6 +78,8 @@ public class RezervacijaService implements IRezervacijaService {
     @Override
     @Transactional
     public boolean saveRequest(Rezervacija entity) {
+        entity.setId(null);
+        entity.setUser(authenticatedUser());
         entity.setStatusRezervacije(statusRezervacijeRepository.findBystatus("Na cekanju"));
 
         Rezervacija rez = repository.save(entity);
@@ -165,6 +169,7 @@ public class RezervacijaService implements IRezervacijaService {
 
         if (rezOpt.isPresent()) {
             Rezervacija rez = rezOpt.get();
+            requireOwnerOrAdmin(rez);
             if (!rez.getStatusRezervacije().getStatus().equals("Odbijena")) {
                 rez.setStatusRezervacije(statusRezervacijeRepository.findBystatus("Odbijena"));
                 rez.setRazlogOdjave(entity.getRazlogOdjave());
@@ -199,6 +204,7 @@ public class RezervacijaService implements IRezervacijaService {
 
         if (rezOpt.isPresent()) {
             Rezervacija rez = rezOpt.get();
+            requireOwnerOrAdmin(rez);
             rez.setStatusRezervacije(statusRezervacijeRepository.findBystatus("Na cekanju"));
             rez.setSale(entity.getSale());
             rez.setVremeDatum(entity.getVremeDatum());
@@ -221,6 +227,26 @@ public class RezervacijaService implements IRezervacijaService {
         }
 
         return false;
+    }
+
+    private User authenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof User user) || user.getId() == null) {
+            throw new AccessDeniedException("Authenticated user required");
+        }
+        return user;
+    }
+
+    private void requireOwnerOrAdmin(Rezervacija existingReservation) {
+        User user = authenticatedUser();
+        boolean admin = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().anyMatch(authority -> "ADMIN".equals(authority.getAuthority()));
+        boolean owner = existingReservation.getUser() != null
+                && user.getId().equals(existingReservation.getUser().getId());
+        if (!owner && !admin) {
+            throw new AccessDeniedException("Reservation belongs to another user");
+        }
     }
 
     //NOT IMPLEMENTED YET

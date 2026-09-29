@@ -13,6 +13,7 @@ import com.NJT.WebApi.model.user.User;
 import com.NJT.WebApi.model.user.ZaposleniUNastavi;
 import com.NJT.WebApi.model.user.ZaposleniVanNastave;
 import com.NJT.WebApi.repository.*;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -111,6 +112,15 @@ public class UserService {
         if (verificationToken.isPresent()) {
             VerificationToken verificationToken1 = verificationToken.get();
             User user = verificationToken1.getUser();
+            String email;
+            try {
+                email = jwtService.getEmailFromVerificationToken(token);
+            } catch (JWTVerificationException ex) {
+                return false;
+            }
+            if (!email.equals(user.getEmail())) {
+                return false;
+            }
             if (!user.getPotvrdjenMail()) {
                 user.setPotvrdjenMail(true);
                 userRepository.save(user);
