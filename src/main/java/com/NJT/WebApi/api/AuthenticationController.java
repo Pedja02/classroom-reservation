@@ -6,7 +6,6 @@ import com.NJT.WebApi.model.exception.RegistrationException;
 import com.NJT.WebApi.model.exception.LoginException;
 import com.NJT.WebApi.model.auth.LoginBody;
 import com.NJT.WebApi.model.auth.LoginResponse;
-import com.NJT.WebApi.model.user.User;
 import com.NJT.WebApi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,13 +16,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/v1/auth")
 public class AuthenticationController {
 
-    private final UserController user;
     private UserService userService;
 
     @Autowired
-    public AuthenticationController(UserService userService, UserController user) {
+    public AuthenticationController(UserService userService) {
         this.userService = userService;
-        this.user = user;
     }
 
     /*

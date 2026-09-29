@@ -4,15 +4,11 @@ import com.NJT.WebApi.model.svrha.Svrha;
 import com.NJT.WebApi.model.user.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Calendar;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
 @Getter
 @Setter
@@ -53,7 +49,7 @@ public class Rezervacija {
     @JoinColumn(name = "status_rezervacije_id", nullable = false)
     private StatusRezervacije statusRezervacije;
 
-    @OneToOne(optional = false)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
