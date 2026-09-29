@@ -33,6 +33,7 @@ app:
       - /api/v1/auth/register
       - /api/v1/auth/verify
       - /actuator/health
+      - /hello-controller
       - /ws/**
 
 logging:
