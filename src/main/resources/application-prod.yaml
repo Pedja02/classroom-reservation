@@ -34,6 +34,7 @@ app:
       - /api/v1/auth/verify
       - /actuator/health
       - /ws/**
+      - /api/hello-controller
 
 logging:
   level:
