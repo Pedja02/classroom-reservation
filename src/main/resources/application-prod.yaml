@@ -35,6 +35,7 @@ app:
       - /actuator/health
       - /ws/**
       - /api/hello-controller
+      - /api/v1/sala
 
 logging:
   level:
